@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Outline to Calendar</title>
+</head>
+<body>
+    <h1>Upload Course Outline</h1>
+    <textarea id="courseOutline" rows="10" cols="50" placeholder="Paste your course outline here..."></textarea>
+    <br>
+    <button onclick="submitOutline()">Submit</button>
+    <br>
+    <div id="status"></div>
+    <br>
+    <a id="downloadLink" style="display:none;" download="calendar.ics">Download Calendar File</a>
+
+    <script>
+        async function submitOutline() {
+            const courseOutline = document.getElementById('courseOutline').value;
+            const statusDiv = document.getElementById('status');
+            const downloadLink = document.getElementById('downloadLink');
+    
+            statusDiv.innerText = "Processing...";
+            downloadLink.style.display = 'none';
+    
+            try {
+                const response = await fetch('/extract-dates', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ courseOutline }),
+                });
+    
+                // Check if the response is JSON
+                const contentType = response.headers.get('Content-Type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    if (data.success) {
+                        statusDiv.innerText = "Success! Click below to download your calendar file:";
+                        downloadLink.style.display = 'inline';
+                        downloadLink.href = '/calendar.ics';
+                    } else {
+                        statusDiv.innerText = "Failed to process the course outline.";
+                    }
+                } else {
+                    // Handle non-JSON response
+                    const text = await response.text();
+                    console.error('Unexpected response:', text);
+                    statusDiv.innerText = "An error occurred. Please try again.";
+                }
+            } catch (error) {
+                console.error(error);
+                statusDiv.innerText = "An error occurred. Please try again.";
+            }
+        }
+    </script>
+    
+</body>
+</html>
